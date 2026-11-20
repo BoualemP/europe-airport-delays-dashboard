@@ -19,6 +19,7 @@ def test_update_for_a_complete_year(dataset):
     assert [_texts(card)[0] for card in kpis] == ["ATFM delay per arrival", "Arrivals with ATFM delay", "Arrivals"]
     assert all(_texts(card)[2] == "No previous year in the data" for card in kpis)
     assert any(a.text == SOURCE_NOTE for a in trend.layout.annotations)
+    assert any(a.text == "<b>2024</b>" for a in trend.layout.annotations)  # selected-year label
     assert any(a.text == MAP_SOURCE_NOTE for a in map_fig.layout.annotations)
     assert map_title.endswith("2024")
     busy = dataset.monthly[dataset.monthly["year"] == 2024].groupby("icao")["arrivals"].sum().ge(20_000).sum()

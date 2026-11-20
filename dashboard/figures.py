@@ -14,6 +14,7 @@ TEXT = "#1f2d3d"
 MUTED = "#5a6b7d"
 ACCENT = "#0e6674"
 FOCUS = "#eb6834"
+LOW_TRAFFIC_GREY = "#e4e7ea"  # neutral grey, clearly apart from the petrol-blue selected year
 MAP_SCALE = ["#d6eef0", "#a6d6dc", "#72b9c3", "#3f99a7", "#16798a", "#0e6674", "#0a4a55"]
 FONT = "Inter, system-ui, sans-serif"
 
@@ -22,12 +23,12 @@ MAP_SOURCE_NOTE = "Source: EUROCONTROL · Coordinates: OurAirports"
 
 
 # Shared layout: white background, palette fonts, source note at the bottom of the figure.
-def _style(fig, source_note, height, bottom=48):
+def _style(fig, source_note, height, bottom=48, top=8):
     fig.update_layout(
         height=height, paper_bgcolor=WHITE, plot_bgcolor=WHITE,
         font={"family": FONT, "color": TEXT, "size": 13},
         hoverlabel={"font_family": FONT, "bgcolor": WHITE, "bordercolor": GRID},
-        margin={"l": 8, "r": 8, "t": 8, "b": bottom},
+        margin={"l": 8, "r": 8, "t": top, "b": bottom},
     )
     fig.add_annotation(text=source_note, xref="paper", yref="paper", x=0, y=0, yshift=8 - bottom,
                        xanchor="left", yanchor="bottom", showarrow=False, font={"size": 11, "color": MUTED})
@@ -35,8 +36,8 @@ def _style(fig, source_note, height, bottom=48):
 
 
 # Monthly Europe-wide ATFM delay minutes per arrival, with the 2016 calculation change, the
-# low-traffic years shaded and the selected year highlighted.
-def trend_figure(by_month, selected_year):
+# low-traffic years shaded in grey and the selected year in petrol blue, labelled above the plot.
+def trend_figure(by_month, selected_year, selected_label):
     fig = go.Figure(go.Scatter(
         x=by_month["date"], y=by_month["delay_min_per_arrival"], mode="lines",
         line={"color": ACCENT, "width": 2}, customdata=by_month["arr_with_atfm_delay_pct"],
@@ -44,26 +45,35 @@ def trend_figure(by_month, selected_year):
                       "%{customdata:.1f}% of arrivals with ATFM delay<extra></extra>",
     ))
     fig.add_vrect(x0=pd.Timestamp(LOW_TRAFFIC_YEARS[0], 1, 1), x1=pd.Timestamp(LOW_TRAFFIC_YEARS[-1] + 1, 1, 1),
-                  fillcolor=PANEL, line_width=0, layer="below")
+                  fillcolor=LOW_TRAFFIC_GREY, line_width=0, layer="below")
     # placed below the calculation-change note, so the two do not overlap on narrow screens
     fig.add_annotation(x=pd.Timestamp(LOW_TRAFFIC_YEARS[0], 1, 1), y=0.84, xref="x", yref="paper",
                        text="Low traffic", showarrow=False, xanchor="left", yanchor="top",
                        font={"size": 11, "color": MUTED})
     selected = by_month[by_month["year"] == selected_year]["date"]
-    fig.add_vrect(x0=selected.min(), x1=selected.max() + pd.offsets.MonthBegin(1),
-                  fillcolor=ACCENT, opacity=0.10, line_width=0, layer="below")
+    start, end = selected.min(), selected.max() + pd.offsets.MonthBegin(1)
+    fig.add_vrect(x0=start, x1=end, fillcolor=ACCENT, opacity=0.22, line_width=0, layer="below")
+    # Label just above the plot area, so it never covers the notes inside it. Near either end of the
+    # axis it is aligned with the band's outer edge, so it stays inside the figure on narrow screens.
+    first, last = by_month["date"].min(), by_month["date"].max() + pd.offsets.MonthBegin(1)
+    position = (start - first) / (last - first)
+    x, anchor = ((end, "right") if position > 0.8 else (start, "left") if position < 0.2
+                 else (start + (end - start) / 2, "center"))
+    fig.add_annotation(x=x, y=1, xref="x", yref="paper", xanchor=anchor, yanchor="bottom",
+                       text=f"<b>{selected_label}</b>", showarrow=False, font={"size": 12, "color": ACCENT})
     # Vertical line as a shape plus an annotation (add_vline's own annotation needs a numeric axis)
     fig.add_shape(type="line", x0=ATFM_CALCULATION_CHANGE, x1=ATFM_CALCULATION_CHANGE, y0=0, y1=1,
                   xref="x", yref="paper", line={"color": MUTED, "width": 1, "dash": "dot"})
     fig.add_annotation(x=ATFM_CALCULATION_CHANGE, y=1, xref="x", yref="paper", xanchor="left", yanchor="top",
                        text="ATFM delay calculation<br>changed", showarrow=False, align="left",
                        font={"size": 11, "color": MUTED})
-    fig.update_xaxes(showgrid=False, linecolor=GRID, ticks="outside", tickcolor=GRID, dtick="M24",
-                     tickformat="%Y")
+    # fixed range: annotations near the edges must not widen the axis
+    fig.update_xaxes(range=[first, last], showgrid=False, linecolor=GRID, ticks="outside", tickcolor=GRID,
+                     dtick="M24", tickformat="%Y")
     # headroom above the highest month, so the notes at the top do not cover the line
     fig.update_yaxes(gridcolor=GRID, zeroline=False, range=[0, by_month["delay_min_per_arrival"].max() * 1.25],
                      title=None)
-    return _style(fig, SOURCE_NOTE, height=340)
+    return _style(fig, SOURCE_NOTE, height=360, top=26)
 
 
 # Airports as bubbles on a map: size = arrivals, colour = ATFM delay minutes per arrival on a scale

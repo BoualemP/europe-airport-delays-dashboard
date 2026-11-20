@@ -70,7 +70,7 @@ def update_overview(data, year):
         f"Monthly ATFM delay across Europe since {by_month['date'].min():%b %Y}, "
         f"and where it built up in {period}.",
         kpi_cards(kpis),
-        figures.trend_figure(by_month, year),
+        figures.trend_figure(by_month, year, period),
         f"ATFM delay minutes per arrival by airport, {period}",
         figures.map_figure(shown, cap, bounds),
         f"{len(busy)} airports with at least {metrics.MIN_ARRIVALS:,} arrivals in {period}. "
