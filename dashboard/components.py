@@ -66,9 +66,12 @@ def legend(colors):
 
 # A plain HTML table: header row, then one row per item of 'rows' (lists of cell texts).
 # Rows whose index is in 'highlight' get the 'highlight' class; 'footer' rows are set apart.
-def table(header, rows, highlight=(), footer=(), numeric_from=1):
+# Columns whose index is in 'hide_on_phones' are hidden below 600px (class 'hide-mobile').
+def table(header, rows, highlight=(), footer=(), numeric_from=1, hide_on_phones=()):
     def cells(values, tag):
-        return [tag(v, className="num" if i >= numeric_from else None) for i, v in enumerate(values)]
+        return [tag(v, className=" ".join(filter(None, ["num" if i >= numeric_from else "",
+                                                        "hide-mobile" if i in hide_on_phones else ""])) or None)
+                for i, v in enumerate(values)]
 
     body = [html.Tr(cells(r, html.Td), className="highlight" if i in highlight else None) for i, r in enumerate(rows)]
     foot = [html.Tr(cells(r, html.Td)) for r in footer]

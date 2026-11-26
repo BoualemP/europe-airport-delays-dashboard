@@ -70,7 +70,8 @@ def _peer_table(data, icao, peers, year):
     footer = [[f"Median of the {len(peers)} peers", _fmt(median["arrivals"], "{:,.0f}"),
                _fmt(median["delay_min_per_arrival"], "{:.3f}"), _fmt(median["arr_with_atfm_delay_pct"], "{:.1f}%"), ""]]
     header = ["Airport", "Arrivals", "ATFM delay min per arrival", "Arrivals with ATFM delay", "Rank"]
-    return table(header, body, highlight=(0,), footer=footer)
+    # Arrivals is hidden on phones, so the ATFM delay columns and the rank fit on screen
+    return table(header, body, highlight=(0,), footer=footer, hide_on_phones=(1,))
 
 
 # Causes table ("Show the numbers"): minutes per arrival by reason group and year, and the total.

@@ -182,4 +182,9 @@ h3 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; }
   h1 { font-size: 23px; }
   .card { padding: 14px 10px 6px; }
   .kpi-value { font-size: 26px; }
+  /* tables: drop secondary columns and let headers wrap, so the key columns fit a phone screen */
+  .table-wrap .hide-mobile { display: none; }
+  .table-wrap th { white-space: normal; vertical-align: bottom; }
+  .table-wrap td:first-child { white-space: normal; }
+  .table-wrap th, .table-wrap td { padding: 6px 6px; }
 }

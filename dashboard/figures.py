@@ -16,12 +16,14 @@ ACCENT = "#0e6674"
 FOCUS = "#eb6834"
 LOW_TRAFFIC_GREY = "#e4e7ea"  # neutral grey, clearly apart from the petrol-blue selected year
 MAP_SCALE = ["#d6eef0", "#a6d6dc", "#72b9c3", "#3f99a7", "#16798a", "#0e6674", "#0a4a55"]
-# Reason groups in stack order. Validated with the dataviz palette validator (light mode, adjacent pairs):
-# worst CVD ΔE 16.3, worst normal-vision ΔE 19.6. No orange or red, so orange stays for Lisbon, Porto and
-# Faro. Four colours are below 3:1 on white, so values are also given by hover and a table.
+# Reason groups in stack order, seven hue families (green, blue, crimson, yellow, brown, violet, pink).
+# Validated with the dataviz palette validator (light mode, adjacent pairs): worst CVD ΔE 19.9, worst
+# normal-vision ΔE 23.0. No orange or bright red, so orange stays for Lisbon, Porto and Faro; these colours
+# never share a chart with the orange marks (the Capacity green is close to that orange for colour-blind
+# readers). Two colours are below 3:1 on white, so values are also given by hover and a table.
 CAUSE_COLORS = {
-    "Capacity": "#1baf7a", "Weather": "#2a78d6", "Capacity (ATC)": "#84b9f3", "Staffing (ATC)": "#eda100",
-    "Disruptions (ATC)": "#e87ba4", "Disruptions": "#008300", "Events": "#6250d6",
+    "Capacity": "#008300", "Weather": "#2a78d6", "Capacity (ATC)": "#b8325f", "Staffing (ATC)": "#eda100",
+    "Disruptions (ATC)": "#9c5f24", "Disruptions": "#6250d6", "Events": "#e87ba4",
 }
 FONT = "Inter, system-ui, sans-serif"
 

@@ -79,6 +79,9 @@ def test_update_for_a_ranked_airport(dataset):
     assert [t.name for t in causes_fig.data] == GROUP_ORDER
     assert causes_fig.layout.showlegend is False  # the legend is HTML (components.legend)
     assert peers_title.endswith("and the median of its traffic peers") and table_title == "Traffic peers in 2024"
+    # on phones the Arrivals column is hidden, the other columns stay
+    header_cells = out[5].children.children[0].children.children
+    assert [c.children for c in header_cells if "hide-mobile" in (c.className or "")] == ["Arrivals"]
 
 
 def test_update_for_a_partial_year_and_an_airport_without_data(dataset):
