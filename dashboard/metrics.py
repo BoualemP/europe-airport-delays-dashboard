@@ -62,17 +62,25 @@ def period_totals(monthly, year, months, icao=None):
     return add_ratios(rows[SUMS].sum().to_frame().T).iloc[0]
 
 
+# The previous year on the same months as 'year' (every month for a complete year): its months and its
+# label ('2024', or 'Jan–Oct 2025'), or None when the data does not have those months.
+def previous_period(monthly, coverage, year):
+    months = year_months(monthly, year)
+    if not set(months) <= set(year_months(monthly, year - 1)):
+        return None
+    return months, str(year - 1) if is_complete(coverage, year) else f"{months_label(months)} {year - 1}"
+
+
 # KPIs of a year and of the previous year on the same months, Europe-wide or for one airport.
 # The months come from the whole dataset, so an airport is compared on the same months as Europe.
 # 'previous' is None when the data has no previous year, or when the airport had no arrivals in it;
 # 'previous_note' then says which of the two it is.
 def period_kpis(monthly, coverage, year, icao=None):
     months = year_months(monthly, year)
-    previous = year - 1
     before, label, note = None, None, "No previous year in the data"
-    if set(months) <= set(year_months(monthly, previous)):
-        label = str(previous) if is_complete(coverage, year) else f"{months_label(months)} {previous}"
-        before, note = period_totals(monthly, previous, months, icao), None
+    if (previous := previous_period(monthly, coverage, year)) is not None:
+        label = previous[1]
+        before, note = period_totals(monthly, year - 1, months, icao), None
         if before["arrivals"] == 0:
             before, note = None, f"No arrivals reported in {label}"
     return {
@@ -91,15 +99,18 @@ def europe_by_month(monthly):
     return add_ratios(out)
 
 
-# Sums and ratios per airport for one year (all months with data).
-def airport_year_totals(monthly, year):
+# Sums and ratios per airport for one year (all months with data, or only 'months').
+def airport_year_totals(monthly, year, months=None):
     rows = monthly[monthly["year"] == year]
+    if months is not None:
+        rows = rows[rows["month"].isin(months)]
     return add_ratios(rows.groupby("icao")[SUMS].sum())
 
 
-# Airports with at least MIN_ARRIVALS arrivals in one year, with their labels and coordinates.
-def busy_airports(monthly, airports, year):
-    totals = airport_year_totals(monthly, year)
+# Airports with at least MIN_ARRIVALS arrivals in one year (or in some of its months), with their labels
+# and coordinates.
+def busy_airports(monthly, airports, year, months=None):
+    totals = airport_year_totals(monthly, year, months)
     return totals[totals["arrivals"] >= MIN_ARRIVALS].join(airports).sort_values("arrivals", ascending=False)
 
 
@@ -126,11 +137,25 @@ def explorer_airports(monthly, airports):
     return airports.loc[sorted(busy)].sort_values("name")
 
 
-# Busy airports of one year ranked by ATFM delay per arrival (1 = highest; ties share a rank).
-def delay_ranking(monthly, airports, year):
-    ranked = busy_airports(monthly, airports, year).copy()
-    ranked["rank"] = ranked["delay_min_per_arrival"].rank(ascending=False, method="min").astype("int64")
-    return ranked.sort_values(["rank", "arrivals"], ascending=[True, False])
+# Busy airports of one year (or of some of its months) ranked by one measure: ATFM delay minutes per
+# arrival or the share of arrivals with ATFM delay (1 = highest; ties share a rank). Airports with no ATFM
+# delay at all are counted but not ranked (rank missing), as in the analysis (5.3): they would all tie last.
+def delay_ranking(monthly, airports, year, measure="delay_min_per_arrival", months=None):
+    ranked = busy_airports(monthly, airports, year, months).copy()
+    values = ranked[measure].where(ranked["delay_min"] > 0)
+    ranked["rank"] = values.rank(ascending=False, method="min").astype("Int64")
+    return ranked.sort_values(["rank", "arrivals"], ascending=[True, False], na_position="last")
+
+
+# Ranks in the previous year on the same months (the 'Rank in 2024' column) and that period's label, or
+# None when the data does not have those months. Airports below the minimum or without ATFM delay that
+# year are missing or have no rank.
+def previous_ranks(monthly, airports, coverage, year, measure="delay_min_per_arrival"):
+    previous = previous_period(monthly, coverage, year)
+    if previous is None:
+        return None
+    months, label = previous
+    return delay_ranking(monthly, airports, year - 1, measure, months)["rank"], label
 
 
 # Traffic peers of an airport: the n airports just above and the n just below it when all airports

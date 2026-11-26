@@ -74,6 +74,16 @@ h2 { font-size: 17px; font-weight: 600; margin: 0 0 10px; }
 
 .year-select { width: 200px; }
 
+.control-label { font-weight: 500; }
+
+/* a label and its selector, kept together when the controls wrap */
+.control { display: flex; align-items: center; gap: 12px; min-width: 0; }
+
+/* "Rank by" choice: radio buttons in the accent colour, wrapping on narrow screens */
+.radio { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+.radio label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.radio input { accent-color: var(--accent); margin: 0; }
+
 .airport-select { width: 360px; max-width: 100%; }
 
 /* the Dash 4 dropdown wrapper must also shrink, or a 360px selector overflows a phone screen */
@@ -183,8 +193,8 @@ h3 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; }
   .card { padding: 14px 10px 6px; }
   .kpi-value { font-size: 26px; }
   /* tables: drop secondary columns and let headers wrap, so the key columns fit a phone screen */
-  .table-wrap .hide-mobile { display: none; }
+  .table-wrap .hide-mobile, .caption .hide-mobile { display: none; }
   .table-wrap th { white-space: normal; vertical-align: bottom; }
-  .table-wrap td:first-child { white-space: normal; }
+  .table-wrap td:first-child, .table-wrap td:has(> a) { white-space: normal; }
   .table-wrap th, .table-wrap td { padding: 6px 6px; }
 }
