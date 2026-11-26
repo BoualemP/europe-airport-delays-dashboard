@@ -1,0 +1,13 @@
+.git/
+.venv/
+.pytest_cache/
+.playwright-mcp/
+.claude/
+__pycache__/
+data/
+prepared/
+docs/
+screenshots/
+tests/
+*.md
+*_boubou*
