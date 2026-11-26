@@ -217,3 +217,29 @@ def heatmap_figure(matrix, selected_year, selected_label):
     fig.update_xaxes(range=[years[0] - 0.5, years[-1] + 0.5], dtick=2, showgrid=False, ticks="")
     fig.update_yaxes(autorange="reversed", showgrid=False, ticks="")
     return _style(fig, SOURCE_NOTE, height=470, top=26, bottom=120)
+
+
+# ---------------------------------------------------------------- rankings
+
+# Horizontal bars of ranked airports, highest at the top, with the value at the end of each bar.
+# Lisbon, Porto and Faro are orange; 'extra' holds those of them outside 'top', shown after an empty row.
+def rankings_figure(top, extra, measure, value_format):
+    rows = pd.concat([top, extra])
+    bars = [{"y": f"{r['rank']}. {r['name']}", "x": r[measure], "text": value_format.format(r[measure]),
+             "color": FOCUS if icao in FOCUS_AIRPORTS else ACCENT,
+             "custom": (icao, r["country"], r["arrivals"], r["delay_min_per_arrival"], r["arr_with_atfm_delay_pct"])}
+            for icao, r in rows.iterrows()]
+    if len(extra):
+        bars.insert(len(top), {"y": " ", "x": None, "text": "", "color": WHITE, "custom": ("", "", 0, 0, 0)})
+    fig = go.Figure(go.Bar(
+        x=[b["x"] for b in bars], y=[b["y"] for b in bars], orientation="h", text=[b["text"] for b in bars],
+        textposition="outside", cliponaxis=False, textfont={"color": TEXT, "size": 12},
+        marker={"color": [b["color"] for b in bars]}, customdata=[b["custom"] for b in bars],
+        hovertemplate="<b>%{y}</b> (%{customdata[0]}), %{customdata[1]}<br>%{customdata[2]:,} arrivals<br>"
+                      "%{customdata[3]:.3f} min of ATFM delay per arrival<br>"
+                      "%{customdata[4]:.1f}% of arrivals with ATFM delay<extra></extra>",
+    ))
+    fig.update_yaxes(autorange="reversed", showgrid=False, ticks="", automargin=True)
+    fig.update_xaxes(gridcolor=GRID, zeroline=False, range=[0, rows[measure].max() * 1.2], title=None, side="top")
+    fig.update_layout(bargap=0.35, showlegend=False)
+    return _style(fig, SOURCE_NOTE, height=26 * len(bars) + 90, top=30)

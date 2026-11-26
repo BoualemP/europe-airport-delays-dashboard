@@ -45,6 +45,7 @@ def test_kpis_for_an_airport_without_arrivals_in_the_previous_year(dataset):
 def test_ranking_and_ordinals(dataset):
     ranked = metrics.delay_ranking(dataset.monthly, dataset.airports, 2024)
     values = ranked["delay_min_per_arrival"]
+    assert (ranked["delay_min"] > 0).all()  # every busy airport had ATFM delay in 2024
     assert ranked["rank"].tolist() == values.rank(ascending=False, method="min").astype(int).tolist()
     assert [ordinal(n) for n in (1, 2, 3, 4, 11, 12, 13, 21, 22, 101)] == \
         ["1st", "2nd", "3rd", "4th", "11th", "12th", "13th", "21st", "22nd", "101st"]
@@ -110,3 +111,9 @@ def test_update_for_a_partial_year_and_an_airport_without_data(dataset):
     assert _texts(kpis[3])[1] == "Not ranked"
     assert "no traffic peers" in caption
     assert isinstance(metrics.month_year_matrix(dataset.monthly, "XSMA"), pd.DataFrame)
+
+
+def test_airport_without_atfm_delay_is_not_ranked(dataset):
+    # LTAC has arrivals above the minimum but no ATFM delay in 2025
+    kpis, _ = airport.airport_kpis(dataset, "LTAC", 2025)
+    assert _texts(kpis[3])[1:] == ["Not ranked", "No ATFM delay in Jan–Mar 2025"]

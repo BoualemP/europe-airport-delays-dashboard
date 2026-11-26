@@ -50,7 +50,9 @@ def airport_kpis(data, icao, year):
     else:
         cards = kpi_cards(kpis)
     ranking = metrics.delay_ranking(data.monthly, data.airports, year)
-    if icao in ranking.index:
+    if icao in ranking.index and pd.isna(ranking.loc[icao, "rank"]):
+        rank = kpi_card("Rank", "Not ranked", f"No ATFM delay in {period}")
+    elif icao in ranking.index:
         rank = kpi_card("Rank", ordinal(int(ranking.loc[icao, "rank"])),
                         f"of {len(ranking)} airports with at least {metrics.MIN_ARRIVALS:,} arrivals in {period}")
     else:

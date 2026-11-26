@@ -66,10 +66,14 @@ def legend(colors):
 
 # A plain HTML table: header row, then one row per item of 'rows' (lists of cell texts).
 # Rows whose index is in 'highlight' get the 'highlight' class; 'footer' rows are set apart.
+# Columns from 'numeric_from' on are right-aligned, or the columns listed in 'numeric' when it is given.
 # Columns whose index is in 'hide_on_phones' are hidden below 600px (class 'hide-mobile').
-def table(header, rows, highlight=(), footer=(), numeric_from=1, hide_on_phones=()):
+def table(header, rows, highlight=(), footer=(), numeric_from=1, hide_on_phones=(), numeric=None):
+    def is_numeric(i):
+        return i in numeric if numeric is not None else i >= numeric_from
+
     def cells(values, tag):
-        return [tag(v, className=" ".join(filter(None, ["num" if i >= numeric_from else "",
+        return [tag(v, className=" ".join(filter(None, ["num" if is_numeric(i) else "",
                                                         "hide-mobile" if i in hide_on_phones else ""])) or None)
                 for i, v in enumerate(values)]
 
