@@ -4,7 +4,8 @@ import dash
 from dash import ClientsideFunction, Input, Output, State, callback, clientside_callback, dcc, html
 
 from dashboard.data import get_data
-from dashboard.overview import default_year, update_overview, year_options
+from dashboard.components import default_year, year_options
+from dashboard.overview import update_overview
 
 dash.register_page(__name__, path="/", name="Overview", title="Overview · European Airport ATFM Delays",
                    order=0)

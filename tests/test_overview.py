@@ -1,4 +1,4 @@
-from dashboard import overview
+from dashboard import components, metrics, overview
 from dashboard.figures import MAP_SOURCE_NOTE, SOURCE_NOTE
 
 
@@ -7,10 +7,10 @@ def _texts(component):
 
 
 def test_year_options_and_default(dataset):
-    options = overview.year_options(dataset)
+    options = components.year_options(dataset)
     assert [o["value"] for o in options] == [2025, 2024]
     assert options[0]["label"] == "2025 (Jan–Mar)"
-    assert overview.default_year(dataset) == 2024
+    assert components.default_year(dataset) == 2024
 
 
 def test_update_for_a_complete_year(dataset):
@@ -40,5 +40,5 @@ def test_map_bounds_cover_every_year(dataset):
     _, _, _, _, map_fig, _ = overview.update_overview(dataset, 2025)
     west, south, east, north = map_fig.layout.meta["bounds"]
     for year in dataset.coverage.index:
-        shown = overview.metrics.map_airports(dataset.monthly, dataset.airports, year)
+        shown = metrics.map_airports(dataset.monthly, dataset.airports, year)
         assert shown["lon"].between(west, east).all() and shown["lat"].between(south, north).all()

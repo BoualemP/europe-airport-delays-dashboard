@@ -12,7 +12,7 @@ def test_complete_and_partial_years(dataset):
 
 
 def test_kpis_are_ratios_of_sums(dataset):
-    kpis = metrics.europe_kpis(dataset.monthly, dataset.coverage, 2024)
+    kpis = metrics.period_kpis(dataset.monthly, dataset.coverage, 2024)
     rows = dataset.monthly[dataset.monthly["year"] == 2024]
     now = kpis["current"]
     assert now["delay_min_per_arrival"] == pytest.approx(rows["delay_min"].sum() / rows["arrivals"].sum())
@@ -22,7 +22,7 @@ def test_kpis_are_ratios_of_sums(dataset):
 
 
 def test_partial_year_compares_same_months(dataset):
-    kpis = metrics.europe_kpis(dataset.monthly, dataset.coverage, 2025)
+    kpis = metrics.period_kpis(dataset.monthly, dataset.coverage, 2025)
     before = dataset.monthly[(dataset.monthly["year"] == 2024) & dataset.monthly["month"].isin([1, 3])]
     assert kpis["previous"]["arrivals"] == before["arrivals"].sum()
     assert kpis["previous_label"] == "Jan–Mar 2024"
