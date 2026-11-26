@@ -46,7 +46,7 @@ def kpi_cards(kpis):
     values = [f"{now['delay_min_per_arrival']:.2f} min", f"{now['arr_with_atfm_delay_pct']:.1f}%",
               f"{now['arrivals']:,.0f}"]
     if before is None:
-        changes = ["No previous year in the data"] * 3
+        changes = [kpis["previous_note"]] * 3
     else:
         changes = [f"{text} against {kpis['previous_label']}" for text in (
             f"{signed(now['delay_min_per_arrival'] - before['delay_min_per_arrival'], 2)} min",

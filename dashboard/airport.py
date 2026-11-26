@@ -24,13 +24,14 @@ def airport_options(data):
 
 
 # Airport and year from the URL (e.g. /airport?icao=LPPT&year=2025), or the defaults when missing or unknown.
+# A repeated query key arrives as a list and counts as unknown; the year must be plain ASCII digits.
 def initial_selection(data, icao=None, year=None):
     airports = _explorer_airports(data).index
-    icao = (icao or "").upper()
+    icao = icao.upper() if isinstance(icao, str) else ""
     if icao not in airports:
         icao = DEFAULT_AIRPORT if DEFAULT_AIRPORT in airports else airports[0]
-    years = data.coverage.index
-    year = int(year) if str(year).isdigit() and int(year) in years else max(metrics.complete_years(data.coverage))
+    valid_year = isinstance(year, (str, int)) and str(year).isascii() and str(year).isdigit()
+    year = int(year) if valid_year and int(year) in data.coverage.index else max(metrics.complete_years(data.coverage))
     return icao, year
 
 
@@ -98,7 +99,8 @@ def update_airport(data, icao, year):
     by_year = metrics.airport_vs_peers_by_year(data.monthly, icao, peers, years)
     if peers:
         peers_caption = (f"The peers are the {len(peers)} airports closest to {name} in arrivals in {period} "
-                         "(up to 5 above and 5 below), kept the same in every year. Complete years only.")
+                         f"(up to {metrics.PEERS_EACH_SIDE} above and {metrics.PEERS_EACH_SIDE} below), "
+                         "kept the same in every year. Complete years only.")
         peers_table = _peer_table(data, icao, peers, year)
     else:
         peers_caption = f"{name} has no arrivals reported in {period}, so it has no traffic peers that year."

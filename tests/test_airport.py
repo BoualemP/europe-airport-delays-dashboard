@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 
 from dashboard import airport, metrics
-from dashboard.components import ordinal
+from dashboard.components import kpi_cards, ordinal
 from dashboard.data import GROUP_ORDER
 from dashboard.figures import CAUSE_COLORS, SOURCE_NOTE
 
@@ -28,6 +28,18 @@ def test_initial_selection_from_url(dataset):
     assert airport.initial_selection(dataset, "ltac", "2025") == ("LTAC", 2025)
     assert airport.initial_selection(dataset, "ZZZZ", "abc") == ("LPPT", complete)
     assert airport.initial_selection(dataset, "LPPT", "1999") == ("LPPT", complete)
+    # a repeated key arrives as a list; '²' passes str.isdigit but is not a number int() accepts
+    assert airport.initial_selection(dataset, ["LTAC", "LPPT"], ["2024", "2025"]) == ("LPPT", complete)
+    assert airport.initial_selection(dataset, "LTAC", "²") == ("LTAC", complete)
+
+
+def test_kpis_for_an_airport_without_arrivals_in_the_previous_year(dataset):
+    # LTAC without its 2024 rows: the previous year is in the data, but LTAC has no arrivals in it
+    monthly = dataset.monthly[~((dataset.monthly["icao"] == "LTAC") & (dataset.monthly["year"] == 2024))]
+    kpis = metrics.period_kpis(monthly, dataset.coverage, 2025, "LTAC")
+    assert kpis["previous"] is None and kpis["previous_label"] == "Jan–Mar 2024"
+    assert kpis["previous_note"] == "No arrivals reported in Jan–Mar 2024"
+    assert all(_texts(card)[2] == "No arrivals reported in Jan–Mar 2024" for card in kpi_cards(kpis))
 
 
 def test_ranking_and_ordinals(dataset):

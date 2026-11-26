@@ -64,21 +64,23 @@ def period_totals(monthly, year, months, icao=None):
 
 # KPIs of a year and of the previous year on the same months, Europe-wide or for one airport.
 # The months come from the whole dataset, so an airport is compared on the same months as Europe.
-# 'previous' is None when the data has no previous year, or when the airport had no arrivals in it.
+# 'previous' is None when the data has no previous year, or when the airport had no arrivals in it;
+# 'previous_note' then says which of the two it is.
 def period_kpis(monthly, coverage, year, icao=None):
     months = year_months(monthly, year)
     previous = year - 1
-    before = None
+    before, label, note = None, None, "No previous year in the data"
     if set(months) <= set(year_months(monthly, previous)):
-        before = period_totals(monthly, previous, months, icao)
+        label = str(previous) if is_complete(coverage, year) else f"{months_label(months)} {previous}"
+        before, note = period_totals(monthly, previous, months, icao), None
         if before["arrivals"] == 0:
-            before = None
+            before, note = None, f"No arrivals reported in {label}"
     return {
         "current": period_totals(monthly, year, months, icao),
         "previous": before,
         "label": period_label(coverage, monthly, year),
-        "previous_label": None if before is None else
-        (str(previous) if is_complete(coverage, year) else f"{months_label(months)} {previous}"),
+        "previous_label": label,
+        "previous_note": note,
     }
 
 

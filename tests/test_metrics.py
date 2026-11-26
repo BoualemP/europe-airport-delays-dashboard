@@ -19,6 +19,7 @@ def test_kpis_are_ratios_of_sums(dataset):
     assert now["arr_with_atfm_delay_pct"] == pytest.approx(
         rows["arr_with_atfm_delay"].sum() / rows["arrivals"].sum() * 100)
     assert kpis["previous"] is None  # first year in the data
+    assert kpis["previous_note"] == "No previous year in the data"
 
 
 def test_partial_year_compares_same_months(dataset):
