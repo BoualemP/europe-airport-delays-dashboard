@@ -16,15 +16,20 @@ def _text(component):
     return _text(children)
 
 
-def _links(component, found=None):
+# Every html.A in the page, in order.
+def _anchors(component, found=None):
     found = [] if found is None else found
     if isinstance(component, html.A):
-        found.append(component.href)
+        found.append(component)
     children = getattr(component, "children", None)
     for child in children if isinstance(children, (list, tuple)) else [children]:
         if child is not None and not isinstance(child, str):
-            _links(child, found)
+            _anchors(child, found)
     return found
+
+
+def _links(component):
+    return [a.href for a in _anchors(component)]
 
 
 def test_data_facts_come_from_the_data(dataset):
@@ -44,6 +49,9 @@ def test_links_open_outside_the_app(dataset):
     links = _links(page)
     assert about.ANALYSIS_URL in links and about.CODE_URL in links and about.AUTHOR_URL in links
     assert all(link.startswith("https://") for link in links)
+    # each link opens in a new tab, without giving the new page access to this one
+    anchors = _anchors(page)
+    assert all(a.target == "_blank" and a.rel == "noopener noreferrer" for a in anchors)
 
 
 def test_atfm_is_explained_on_the_about_page_only():
