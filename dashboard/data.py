@@ -3,6 +3,10 @@
 The files are not stored in the repository: they are downloaded into DATA_DIR at start-up and
 reused from there (local cache), unless REFRESH is set. Each yearly file is read on its own and
 aggregated at once to one row per airport and month, which keeps memory small.
+
+In the Docker image the same steps run at build time (dashboard/prepare.py) and the result is saved to
+PREPARED_FILE, so start-up only reads that file: processing the files takes about a minute on a 0.1 CPU
+instance, reading the result under a second.
 """
 
 import bz2
@@ -11,6 +15,7 @@ import io
 import json
 import logging
 import os
+import pickle
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from functools import lru_cache
@@ -30,6 +35,7 @@ OURAIRPORTS_FILE = "ourairports_airports.csv"
 DATA_DIR = Path(os.environ.get("DATA_DIR", "data"))
 REFRESH = os.environ.get("REFRESH", "0") == "1"  # 1: download every file again
 MANIFEST_FILE = "manifest.json"  # retrieval date and server metadata per file
+PREPARED_FILE = os.environ.get("PREPARED_FILE")  # dataset processed at build time; unset: load from DATA_DIR
 TIMEOUT = 120
 
 # Delay codes and their reason groups, as on
@@ -232,7 +238,32 @@ def load_dataset(data_dir=DATA_DIR, refresh=REFRESH, years=None):
     return Dataset(monthly=monthly, airports=airports, coverage=coverage, retrieved=retrieved)
 
 
-# The dataset used by the app, loaded once per process.
+# Save a processed dataset (build time). Written to a temporary name first, so a failed build never
+# leaves half a file behind.
+def save_prepared(dataset, path):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    with tmp.open("wb") as f:
+        pickle.dump(dataset, f, protocol=pickle.HIGHEST_PROTOCOL)
+    tmp.replace(path)
+
+
+# Read a dataset saved by save_prepared. The file comes from the image's own build step, never from
+# outside, so reading it with pickle is safe.
+def load_prepared(path):
+    with Path(path).open("rb") as f:
+        dataset = pickle.load(f)
+    if not isinstance(dataset, Dataset):
+        raise TypeError(f"{path} does not hold a Dataset")
+    return dataset
+
+
+# The dataset used by the app, loaded once per process: the file prepared at build time when there is one
+# (Docker image), otherwise the downloaded files.
 @lru_cache(maxsize=1)
 def get_data():
+    if PREPARED_FILE and not REFRESH and Path(PREPARED_FILE).exists():
+        log.info("reading the dataset prepared at build time from %s", PREPARED_FILE)
+        return load_prepared(PREPARED_FILE)
     return load_dataset()
